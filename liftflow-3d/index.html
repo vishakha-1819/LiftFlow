@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4f7fb" />
+  <title>LiftFlow — 3D Elevator Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#"><span class="brand-mark">L<span>↕</span></span><span><strong>LiftFlow</strong><small>3D
+            ELEVATOR SIMULATOR</small></span></a>
+      <div class="top-status"><span class="live-dot"></span> SIMULATION LIVE <span class="top-divider"></span><span
+          id="clock">00:00</span></div>
+      <div class="top-actions"><button class="ghost-btn" id="resetBtn">↻ Reset</button><button class="danger-btn"
+          id="emergencyBtn">⛑ Emergency recall</button></div>
+    </header>
+
+    <main class="layout">
+      <section class="visual-column">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">LIVE BUILDING VIEW</p>
+            <h1>Building overview <span class="pill">3D</span></h1>
+          </div>
+          <div class="view-controls"><button id="viewOrbit" class="view-btn active">Orbit view</button><button
+              id="viewFront" class="view-btn">Front view</button><button id="viewTop" class="view-btn">Top view</button>
+          </div>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <div class="canvas-hud hud-top-left"><span class="hud-label">BUILDING A</span><strong>10
+              floors</strong><small>2 elevator cars · 6 person capacity</small></div>
+          <div class="canvas-hud hud-top-right"><span class="live-dot"></span> REAL-TIME PHYSICS</div>
+          <div class="canvas-hint">DRAG TO ROTATE <span>·</span> SCROLL TO ZOOM</div>
+          <div id="loading" class="loading-overlay">
+            <div class="loader"></div><span>Preparing 3D building…</span>
+          </div>
+        </div>
+        <div class="legend-row"><span><i class="legend-square car-a"></i> Elevator A <b id="legendA">G ·
+              IDLE</b></span><span><i class="legend-square car-b"></i> Elevator B <b id="legendB">G ·
+              IDLE</b></span><span><i class="legend-square shaft"></i> Elevator shaft</span></div>
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <div class="metric-icon purple">↗</div>
+            <div><span>People served</span><strong id="servedMetric">0</strong><small>Since simulation start</small>
+            </div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon blue">◷</div>
+            <div><span>Average wait</span><strong><span id="avgWaitMetric">0.0</span><em>s</em></strong><small>Passenger
+                waiting time</small></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon orange">⌛</div>
+            <div><span>Longest wait</span><strong><span id="longWaitMetric">0.0</span><em>s</em></strong><small>Current
+                session record</small></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon green">●</div>
+            <div><span>Waiting now</span><strong id="waitingMetric">0</strong><small>Passengers in queue</small></div>
+          </article>
+        </div>
+      </section>
+
+      <aside class="control-column">
+        <section class="panel car-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">CAR STATUS</p>
+              <h2>Elevator controls</h2>
+            </div><span class="live-chip"><i></i> LIVE</span>
+          </div>
+          <div class="car-status-list">
+            <div class="car-status-row">
+              <div class="car-icon icon-a">A</div>
+              <div class="car-info"><strong>Elevator A</strong><span id="statusA">Idle at Ground</span>
+                <div class="mini-track"><i id="trackA"></i></div>
+              </div>
+              <div class="car-floor"><small>FLOOR</small><strong id="floorA">G</strong></div>
+            </div>
+            <div class="car-status-row">
+              <div class="car-icon icon-b">B</div>
+              <div class="car-info"><strong>Elevator B</strong><span id="statusB">Idle at Ground</span>
+                <div class="mini-track"><i id="trackB"></i></div>
+              </div>
+              <div class="car-floor"><small>FLOOR</small><strong id="floorB">G</strong></div>
+            </div>
+          </div>
+          <div class="panel-divider"></div>
+          <div class="subheading"><strong>Dispatch algorithm</strong><span class="info-dot"
+              title="Chooses which elevator should answer a new hall call">i</span></div>
+          <div class="segmented"><button class="algo-btn active" data-algo="nearest">Nearest car</button><button
+              class="algo-btn" data-algo="smart">Smart dispatch</button></div>
+          <p class="helper-text" id="algoHelp">Assigns each new call to the closest available elevator.</p>
+        </section>
+
+        <section class="panel floor-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">HALL CALLS</p>
+              <h2>Floor buttons</h2>
+            </div><span class="subtle">10 FLOORS</span>
+          </div>
+          <p class="panel-copy">Choose a floor and direction to call an elevator.</p>
+          <div class="floor-list" id="floorList"></div>
+        </section>
+
+        <section class="panel destination-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">INSIDE THE CAR</p>
+              <h2>Destination panel</h2>
+            </div><select id="carSelect" aria-label="Choose elevator">
+              <option value="0">Elevator A</option>
+              <option value="1">Elevator B</option>
+            </select>
+          </div>
+          <p class="panel-copy">Select the car, then choose your destination floor.</p>
+          <div class="destination-grid" id="destinationGrid"></div>
+          <div class="capacity-row"><span>Capacity limit</span><label class="switch"><input type="checkbox"
+                id="capacityToggle" checked><span class="slider"></span></label><strong id="capacityLabel">6
+              people</strong></div>
+        </section>
+
+        <section class="panel simulation-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">TRAFFIC GENERATOR</p>
+              <h2>Passenger simulation</h2>
+            </div><span class="auto-badge" id="autoBadge">PAUSED</span>
+          </div>
+          <div class="toggle-line">
+            <div><strong>Automatic passengers</strong><small>Generate random floor requests</small></div><label
+              class="switch"><input type="checkbox" id="autoToggle"><span class="slider"></span></label>
+          </div>
+          <div class="range-header"><label for="rateSlider">Arrival rate</label><strong id="rateValue">1.5
+              <small>passengers/min</small></strong></div><input type="range" id="rateSlider" min="0.5" max="12"
+            value="1.5" step="0.5">
+          <div class="range-labels"><span>Relaxed</span><span>Busy</span><span>Rush hour</span></div><button
+            class="rush-btn" id="rushBtn">⚡ Start morning rush</button>
+          <p class="helper-text" id="rushHelp">Higher traffic tests dispatch decisions and queue handling.</p>
+        </section>
+
+        <section class="panel log-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">SYSTEM EVENTS</p>
+              <h2>Activity log</h2>
+            </div><button id="clearLog" class="text-btn">Clear</button>
+          </div>
+          <div id="activityLog" class="activity-log">
+            <div class="empty-log">Waiting for the first elevator event…</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+    <footer><span>LiftFlow 3D <b>•</b> Interactive simulation, not connected to real elevator
+        hardware.</span><span>Built with Three.js <b>•</b> Render-ready static site</span></footer>
+    <div id="toast" class="toast" role="status"></div>
+  </div>
+  <script type="importmap">
+    {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+  </script>
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>

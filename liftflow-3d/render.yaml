@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: liftflow-3d
+    runtime: static
+    buildCommand: "echo 'LiftFlow static site ready'"
+    staticPublishPath: .
